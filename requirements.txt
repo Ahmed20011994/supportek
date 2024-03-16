@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+langchain
+langchain_openai
+bs4
+faiss-cpu
+langserve
+langchainhub
+sse_starlette
