@@ -49,12 +49,11 @@ jobs:
         id: increment_version
 
       - name: Commit and push updated version file
-        if: steps.increment_version.outputs.VERSION
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add version.txt
-          git commit -m "Increment version number to ${{ steps.increment_version.outputs.VERSION }}"
+          git commit -m "Increment version number to ${{ env.VERSION }}"
           git push
 
       - name: Build and push Docker image
