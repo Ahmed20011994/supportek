@@ -1,5 +1,9 @@
 import os
 from typing import List, Union
+from urllib.parse import urljoin, urlparse
+
+import requests
+from bs4 import BeautifulSoup
 from fastapi import FastAPI
 from langchain import hub
 from langchain.agents import AgentExecutor
@@ -18,9 +22,47 @@ from langserve import add_routes
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
+
+# Web Crawler
+class WebCrawlerLoader(WebBaseLoader):
+    def __init__(self, base_url: str, max_depth: int = 3):
+        self.base_url = base_url
+        self.max_depth = max_depth
+        self.visited_urls = set()
+
+    def load(self, url: str = None, depth: int = 0):
+        if url is None:
+            url = self.base_url
+
+        # Check if the URL has already been visited or if the maximum depth has been reached
+        if url in self.visited_urls or depth >= self.max_depth:
+            return ""
+
+        # Mark the URL as visited
+        self.visited_urls.add(url)
+
+        # Load the content of the URL
+        response = requests.get(url)
+        content = response.text
+
+        # Parse the content and extract links
+        soup = BeautifulSoup(content, "html.parser")
+        links = [link.get("href") for link in soup.find_all("a", href=True)]
+
+        # Recursively load content from the extracted links
+        for link in links:
+            full_link = urljoin(url, link)
+            # Check if the link is within the same domain
+            if urlparse(full_link).netloc == urlparse(self.base_url).netloc:
+                content += self.load(full_link, depth + 1)
+
+        return content
+
+
 # 1. Load Retriever
-# loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
-loader = WebBaseLoader("https://10pearls.com/life-at-10pearls")
+
+# loader = WebCrawlerLoader("https://docs.smith.langchain.com")
+loader = WebCrawlerLoader("https://www.nike.com")
 docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)

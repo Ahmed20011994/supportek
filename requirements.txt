@@ -1,9 +1,11 @@
-fastapi
-uvicorn
-langchain
+fastapi~=0.110.0
+uvicorn~=0.28.0
+langchain~=0.1.10
 langchain_openai
-bs4
+bs4~=0.0.2
 faiss-cpu
-langserve
+langserve~=0.0.47
 langchainhub
 sse_starlette
+requests~=2.31.0
+beautifulsoup4~=4.12.3
