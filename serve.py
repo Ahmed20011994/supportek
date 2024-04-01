@@ -45,16 +45,22 @@ class TextQueryOutput(BaseModel):
 
 
 # Create Tools
-def create_retriever_tool(modified_retriever, tool_name: str, description: str):
+def create_retriever_tool(retriever, tool_name: str, description: str):
     """
-    Create a retriever tool with hardcoded knowledge sources based on client_id and chatbot_id.
+    Create a retriever tool with hardcoded knowledge sources based on clientId and chatbotId.
     """
 
-    def retrieve(client_id, chatbot_id, query):
+    def retrieve(input_data):
+        clientId = input_data.clientId
+        chatbotId = input_data.chatbotId
+        query = input_data.query
         url_mapping = {
-            ("langsmith", "chatbot1"): "https://docs.client1.chatbot1.langchain.com/user_guide"
+            ("client1", "chatbot1"): "https://docs.client1.chatbot1.langchain.com/user_guide",
+            ("client1", "chatbot2"): "https://docs.client1.chatbot2.langchain.com/user_guide",
+            ("client2", "chatbot1"): "https://docs.client2.chatbot1.langchain.com/user_guide",
+            ("client2", "chatbot2"): "https://docs.client2.chatbot2.langchain.com/user_guide",
         }
-        url = url_mapping.get((client_id, chatbot_id))
+        url = url_mapping.get((clientId, chatbotId))
         if url:
             loader = WebBaseLoader(url)
             docs = loader.load()
@@ -62,7 +68,7 @@ def create_retriever_tool(modified_retriever, tool_name: str, description: str):
             documents = text_splitter.split_documents(docs)
             embeddings = OpenAIEmbeddings()
             vector = FAISS.from_documents(documents, embeddings)
-            return modified_retriever.retrieve(query, source=vector.as_retriever())
+            return retriever.retrieve(query, source=vector.as_retriever())
         else:
             return None
 
