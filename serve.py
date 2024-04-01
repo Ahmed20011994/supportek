@@ -49,7 +49,6 @@ def create_retriever_tool(retriever, tool_name: str, description: str):
     """
     Create a retriever tool with hardcoded knowledge sources based on clientId and chatbotId.
     """
-
     def retrieve(input_data):
         clientId = input_data.clientId
         chatbotId = input_data.chatbotId
@@ -68,7 +67,7 @@ def create_retriever_tool(retriever, tool_name: str, description: str):
             documents = text_splitter.split_documents(docs)
             embeddings = OpenAIEmbeddings()
             vector = FAISS.from_documents(documents, embeddings)
-            return retriever.retrieve(query, source=vector.as_retriever())
+            return {"result": retriever.retrieve(query, source=vector.as_retriever())}
         else:
             return None
 
