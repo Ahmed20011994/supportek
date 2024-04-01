@@ -52,10 +52,7 @@ def create_retriever_tool(modified_retriever, tool_name: str, description: str):
 
     def retrieve(client_id, chatbot_id, query):
         url_mapping = {
-            ("client1", "chatbot1"): "https://docs.client1.chatbot1.langchain.com/user_guide",
-            ("client1", "chatbot2"): "https://docs.client1.chatbot2.langchain.com/user_guide",
-            ("client2", "chatbot1"): "https://docs.client2.chatbot1.langchain.com/user_guide",
-            ("client2", "chatbot2"): "https://docs.client2.chatbot2.langchain.com/user_guide",
+            ("langsmith", "chatbot1"): "https://docs.client1.chatbot1.langchain.com/user_guide"
         }
         url = url_mapping.get((client_id, chatbot_id))
         if url:
