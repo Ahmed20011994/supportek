@@ -13,6 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langserve import add_routes
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
@@ -79,9 +80,11 @@ def get_agent_executor(get_agent_executor_input: Input = Depends()) -> AgentExec
     return agent_executor
 
 
-@app.post("/supportek", response_model=Output)
-async def supportek_endpoint(support_input: Input, support_agent_executor: AgentExecutor = Depends(get_agent_executor)):
-    return await support_agent_executor.run(support_input)
+add_routes(
+    app,
+    agent_executor.with_types(input_type=Input, output_type=Output),
+    path="/supportek",
+)
 
 
 @app.get("/health")
