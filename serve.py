@@ -20,7 +20,6 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 # 1. Load Retriever
 loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
-# loader = WebBaseLoader("https://10pearls.com/life-at-10pearls")
 docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
