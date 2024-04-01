@@ -19,28 +19,48 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 
+# Function to create tools based on clientId and chatbotId
+def create_tools(client_id: str, chatbot_id: str):
+    tools = [search]
+    retriever = load_retriever(client_id, chatbot_id)
+    if retriever:
+        retriever_tool = create_retriever_tool(
+            retriever,
+            "custom_search",
+            "Search for information based on clientId and chatbotId.",
+        )
+        tools.append(retriever_tool)
+    return tools
+
+
 # 1. Load Retriever based on clientId and chatbotId
 def load_retriever(client_id: str, chatbot_id: str):
     if client_id == "langsmith" and chatbot_id == "chatbot1":
-        loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
-        docs = loader.load()
-        text_splitter = RecursiveCharacterTextSplitter()
-        documents = text_splitter.split_documents(docs)
-        embeddings = OpenAIEmbeddings()
-        vector = FAISS.from_documents(documents, embeddings)
-        retriever = vector.as_retriever()
-        return retriever
-    return None
+        url = "https://docs.smith.langchain.com/user_guide"
+    elif client_id == "langsmith" and chatbot_id == "chatbot2":
+        url = "https://docs.smith.langchain.com/user_guide"
+    else:
+        return None  # Return None if no matching URL is found
+
+    loader = WebBaseLoader(url)
+    docs = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter()
+    documents = text_splitter.split_documents(docs)
+    embeddings = OpenAIEmbeddings()
+    vector = FAISS.from_documents(documents, embeddings)
+    retriever = vector.as_retriever()
+    return retriever
 
 
 # 2. Create Tools
 search = TavilySearchResults()
 
-# 3. Create Agent
+# 3. Create Agent with initial tools
+initial_tools = create_tools("", "")
 prompt = hub.pull("hwchase17/openai-functions-agent")
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-agent = create_openai_functions_agent(llm, [], prompt)  # Initialize with empty tools
-agent_executor = AgentExecutor(agent=agent, tools=[], verbose=True)  # Initialize with empty tools
+agent = create_openai_functions_agent(llm, initial_tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=initial_tools, verbose=True)
 
 # 4. App definition
 app = FastAPI(
@@ -66,15 +86,7 @@ class Output(BaseModel):
 
 
 def get_agent_executor(get_agent_executor_input: Input = Depends()) -> AgentExecutor:
-    retriever = load_retriever(get_agent_executor_input.clientId, get_agent_executor_input.chatbotId)
-    tools = [search]
-    if retriever:
-        retriever_tool = create_retriever_tool(
-            retriever,
-            "langsmith_search",
-            "Search for information about LangSmith. For any questions about LangSmith, you must use this tool!",
-        )
-        tools.append(retriever_tool)
+    tools = create_tools(get_agent_executor_input.clientId, get_agent_executor_input.chatbotId)
     agent_executor.tools = tools
     agent_executor.agent.tools = tools
     return agent_executor
