@@ -6,7 +6,6 @@ from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.agents import create_openai_functions_agent
 from langchain.pydantic_v1 import Field
-from langchain.tools import retriever
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import FAISS
@@ -45,7 +44,7 @@ class TextQueryOutput(BaseModel):
     result: str
 
 
-# 1. Create Tools
+# Create Tools
 def create_retriever_tool(modified_retriever, tool_name: str, description: str):
     """
     Create a retriever tool with hardcoded knowledge sources based on client_id and chatbot_id.
@@ -53,7 +52,10 @@ def create_retriever_tool(modified_retriever, tool_name: str, description: str):
 
     def retrieve(client_id, chatbot_id, query):
         url_mapping = {
-            ("langsmith", "chatbot1"): "https://docs.smith.langchain.com/user_guide"
+            ("client1", "chatbot1"): "https://docs.client1.chatbot1.langchain.com/user_guide",
+            ("client1", "chatbot2"): "https://docs.client1.chatbot2.langchain.com/user_guide",
+            ("client2", "chatbot1"): "https://docs.client2.chatbot1.langchain.com/user_guide",
+            ("client2", "chatbot2"): "https://docs.client2.chatbot2.langchain.com/user_guide",
         }
         url = url_mapping.get((client_id, chatbot_id))
         if url:
@@ -63,20 +65,23 @@ def create_retriever_tool(modified_retriever, tool_name: str, description: str):
             documents = text_splitter.split_documents(docs)
             embeddings = OpenAIEmbeddings()
             vector = FAISS.from_documents(documents, embeddings)
-            return retriever.retrieve(query, source=vector.as_retriever())
+            return modified_retriever.retrieve(query, source=vector.as_retriever())
         else:
             return None
 
-    return RunnableTool(
-        name=tool_name,
-        description=description,
-        runnable=retrieve,
-        input_schema=TextQueryInput,
-        output_schema=TextQueryOutput,
-    )
+    return {
+        "function": retrieve,
+        "title": tool_name,
+        "description": description,
+        "input": TextQueryInput,
+        "output": TextQueryOutput,
+    }
 
 
-# 2. Load Retriever
+# Load Retriever
+retriever = ...  # Define your retriever here
+
+# Create Retriever Tool
 retriever_tool = create_retriever_tool(
     retriever,
     "langsmith_search",
@@ -85,13 +90,13 @@ retriever_tool = create_retriever_tool(
 search = TavilySearchResults()
 tools = [retriever_tool, search]
 
-# 3. Create Agent
+# Create Agent
 prompt = hub.pull("hwchase17/openai-functions-agent")
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-# 4. App definition
+# App definition
 app = FastAPI(
     title="LangChain Server",
     version="1.0",
@@ -99,11 +104,7 @@ app = FastAPI(
 )
 
 
-# 5. Adding chain route
-
-# We need to add these input/output schemas because the current AgentExecutor
-# is lacking in schemas.
-
+# Adding chain route
 class Input(BaseModel):
     input: str
     chat_history: List[Union[AIMessage, HumanMessage]] = Field(
@@ -125,11 +126,13 @@ add_routes(
 )
 
 
+# Health Check
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
 
+# Run the app
 if __name__ == "__main__":
     import uvicorn
 
