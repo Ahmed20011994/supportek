@@ -7,7 +7,6 @@ from langchain.agents import create_openai_functions_agent
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
@@ -16,7 +15,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langserve import add_routes
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 # 1. Load Retriever
 loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
@@ -33,8 +31,7 @@ retriever_tool = create_retriever_tool(
     "langsmith_search",
     "Search for information about LangSmith. For any questions about LangSmith, you must use this tool!",
 )
-search = TavilySearchResults()
-tools = [retriever_tool, search]
+tools = [retriever_tool]
 
 # 3. Create Agent
 prompt = hub.pull("hwchase17/openai-functions-agent")
