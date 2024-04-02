@@ -7,7 +7,6 @@ from langchain.agents import create_openai_functions_agent
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
@@ -16,12 +15,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langserve import add_routes
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 
 # Function to create tools based on clientId and chatbotId
 def create_tools(client_id: str, chatbot_id: str):
-    tools = [search]
+    tools = []
     retriever = load_retriever(client_id, chatbot_id)
     if retriever:
         retriever_tool = create_retriever_tool(
@@ -51,9 +49,6 @@ def load_retriever(client_id: str, chatbot_id: str):
     retriever = vector.as_retriever()
     return retriever
 
-
-# 2. Create Tools
-search = TavilySearchResults()
 
 # 3. Create Agent with initial tools
 initial_tools = create_tools("", "")
