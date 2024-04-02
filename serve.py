@@ -5,7 +5,6 @@ from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.agents import create_openai_functions_agent
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools import Tool  # Import the Tool base class
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import FAISS
@@ -16,15 +15,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langserve import add_routes
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-
-# Placeholder tool class
-class PlaceholderTool(Tool):
-    def __init__(self, name="Placeholder Tool", func=None, description="This is a placeholder tool."):
-        super().__init__(name, func, description)
-
-    def run(self, *args, **kwargs):
-        return "This is a placeholder tool."
 
 
 # Function to create tools based on clientId and chatbotId
@@ -41,7 +31,7 @@ def create_tools(client_id: str, chatbot_id: str):
     return tools
 
 
-# 1. Load Retriever based on clientId and chatbotId
+# Load Retriever based on clientId and chatbotId
 def load_retriever(client_id: str, chatbot_id: str):
     if client_id == "langsmith" and chatbot_id == "chatbot1":
         url = "https://docs.smith.langchain.com/user_guide"
@@ -60,16 +50,14 @@ def load_retriever(client_id: str, chatbot_id: str):
     return retriever
 
 
-# 3. Create Agent with initial tools
+# Create Agent with initial tools
 initial_tools = create_tools("", "")
-if not initial_tools:
-    initial_tools.append(PlaceholderTool())
 prompt = hub.pull("hwchase17/openai-functions-agent")
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, initial_tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=initial_tools, verbose=True)
 
-# 4. App definition
+# App definition
 app = FastAPI(
     title="LangChain Server",
     version="1.0",
@@ -77,7 +65,7 @@ app = FastAPI(
 )
 
 
-# 5. Adding chain route
+# Adding chain route
 class Input(BaseModel):
     clientId: str
     chatbotId: str
@@ -94,8 +82,9 @@ class Output(BaseModel):
 
 def get_agent_executor(get_agent_executor_input: Input = Depends()) -> AgentExecutor:
     tools = create_tools(get_agent_executor_input.clientId, get_agent_executor_input.chatbotId)
-    agent_executor.tools = tools
-    agent_executor.agent.tools = tools
+    if tools:
+        agent_executor.tools = tools
+        agent_executor.agent.tools = tools
     return agent_executor
 
 
