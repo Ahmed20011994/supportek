@@ -1,12 +1,13 @@
 import os
 from typing import List, Union
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.agents import create_openai_functions_agent
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
@@ -15,49 +16,33 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langserve import add_routes
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
+# 1. Load Retriever
+loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
+docs = loader.load()
+text_splitter = RecursiveCharacterTextSplitter()
+documents = text_splitter.split_documents(docs)
+embeddings = OpenAIEmbeddings()
+vector = FAISS.from_documents(documents, embeddings)
+retriever = vector.as_retriever()
 
-# Function to create tools based on clientId and chatbotId
-def create_tools(client_id: str, chatbot_id: str):
-    tools = []
-    retriever = load_retriever(client_id, chatbot_id)
-    if retriever:
-        retriever_tool = create_retriever_tool(
-            retriever,
-            "custom_search",
-            "Search for information based on clientId and chatbotId.",
-        )
-        tools.append(retriever_tool)
-    return tools
+# 2. Create Tools
+retriever_tool = create_retriever_tool(
+    retriever,
+    "langsmith_search",
+    "Search for information about LangSmith. For any questions about LangSmith, you must use this tool!",
+)
+search = TavilySearchResults()
+tools = [retriever_tool, search]
 
-
-# Load Retriever based on clientId and chatbotId
-def load_retriever(client_id: str, chatbot_id: str):
-    if client_id == "langsmith" and chatbot_id == "chatbot1":
-        url = "https://docs.smith.langchain.com/user_guide"
-    elif client_id == "langsmith" and chatbot_id == "chatbot2":
-        url = "https://docs.smith.langchain.com/user_guide"
-    else:
-        return None  # Return None if no matching URL is found
-
-    loader = WebBaseLoader(url)
-    docs = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter()
-    documents = text_splitter.split_documents(docs)
-    embeddings = OpenAIEmbeddings()
-    vector = FAISS.from_documents(documents, embeddings)
-    retriever = vector.as_retriever()
-    return retriever
-
-
-# Create Agent with initial tools
-initial_tools = create_tools("", "")
+# 3. Create Agent
 prompt = hub.pull("hwchase17/openai-functions-agent")
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-agent = create_openai_functions_agent(llm, initial_tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=initial_tools, verbose=True)
+agent = create_openai_functions_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-# App definition
+# 4. App definition
 app = FastAPI(
     title="LangChain Server",
     version="1.0",
@@ -65,10 +50,12 @@ app = FastAPI(
 )
 
 
-# Adding chain route
+# 5. Adding chain route
+
+# We need to add these input/output schemas because the current AgentExecutor
+# is lacking in schemas.
+
 class Input(BaseModel):
-    clientId: str
-    chatbotId: str
     input: str
     chat_history: List[Union[AIMessage, HumanMessage]] = Field(
         ...,
@@ -78,14 +65,6 @@ class Input(BaseModel):
 
 class Output(BaseModel):
     output: str
-
-
-def get_agent_executor(get_agent_executor_input: Input = Depends()) -> AgentExecutor:
-    tools = create_tools(get_agent_executor_input.clientId, get_agent_executor_input.chatbotId)
-    if tools:
-        agent_executor.tools = tools
-        agent_executor.agent.tools = tools
-    return agent_executor
 
 
 add_routes(
