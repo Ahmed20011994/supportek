@@ -5,6 +5,7 @@ from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.agents import create_openai_functions_agent
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.tools import Tool  # Import the Tool base class
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import FAISS
@@ -15,6 +16,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langserve import add_routes
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+
+# Placeholder tool class
+class PlaceholderTool(Tool):
+    def run(self, *args, **kwargs):
+        return "This is a placeholder tool."
 
 
 # Function to create tools based on clientId and chatbotId
@@ -52,6 +59,8 @@ def load_retriever(client_id: str, chatbot_id: str):
 
 # 3. Create Agent with initial tools
 initial_tools = create_tools("", "")
+if not initial_tools:
+    initial_tools.append(PlaceholderTool())
 prompt = hub.pull("hwchase17/openai-functions-agent")
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, initial_tools, prompt)
