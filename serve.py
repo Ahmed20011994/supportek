@@ -20,6 +20,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Placeholder tool class
 class PlaceholderTool(Tool):
+    def __init__(self, name="Placeholder Tool", func=None, description="This is a placeholder tool."):
+        super().__init__(name, func, description)
+
     def run(self, *args, **kwargs):
         return "This is a placeholder tool."
 
