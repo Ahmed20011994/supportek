@@ -10,7 +10,7 @@ from models import HumanMessage, Input, Output
 router = APIRouter()
 
 
-@router.post("/supportek", response_model=Output)
+@router.post("/", response_model=Output)
 async def handle_request(user_input: Input):
     knowledge_source_id: str = user_input.knowledge_source_id
     tools = []

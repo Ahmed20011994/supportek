@@ -5,7 +5,7 @@ from endpoints import langchain, knowledgesources
 app = FastAPI(title="Supportek LLM Server", version="1.0", description="LLM based API server")
 
 app.include_router(langchain.router, prefix="/langchain", tags=["LangChain"])
-app.include_router(knowledgesources.router, prefix="/knowledge_sources", tags=["Knowledge Sources"])
+app.include_router(knowledgesources.router, prefix="/knowledgeSources", tags=["Knowledge Sources"])
 
 
 @app.get("/health")
