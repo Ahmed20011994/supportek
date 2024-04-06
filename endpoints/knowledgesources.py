@@ -9,7 +9,7 @@ from models import KnowledgeSource
 router = APIRouter()
 
 
-@router.post("/knowledgeSources", response_model=KnowledgeSource)
+@router.post("/knowledge_sources", response_model=KnowledgeSource)
 async def create_knowledge_source(knowledge_source: KnowledgeSource):
     existing_knowledge_source = knowledge_sources_collection.find_one({"url": knowledge_source.url})
     if existing_knowledge_source:
@@ -19,13 +19,13 @@ async def create_knowledge_source(knowledge_source: KnowledgeSource):
     return KnowledgeSource(**created_knowledge_source)
 
 
-@router.get("/knowledgeSources", response_model=List[KnowledgeSource])
+@router.get("/knowledge_sources", response_model=List[KnowledgeSource])
 async def get_knowledge_sources():
     knowledge_sources = list(knowledge_sources_collection.find())
     return [KnowledgeSource(**ks) for ks in knowledge_sources]
 
 
-@router.get("/knowledgeSources/{ks_id}", response_model=KnowledgeSource)
+@router.get("/knowledge_sources/{ks_id}", response_model=KnowledgeSource)
 async def get_knowledge_source(ks_id: str):  # Change the type to str
     oid = ObjectId(ks_id)  # Convert the string to ObjectId
     knowledge_source = knowledge_sources_collection.find_one({"_id": oid})
@@ -34,7 +34,7 @@ async def get_knowledge_source(ks_id: str):  # Change the type to str
     return KnowledgeSource(**knowledge_source)
 
 
-@router.put("/knowledgeSources/{ks_id}", response_model=KnowledgeSource)
+@router.put("/knowledge_sources/{ks_id}", response_model=KnowledgeSource)
 async def update_knowledge_source(ks_id: str, updated_ks: KnowledgeSource):
     oid = ObjectId(ks_id)
     result = knowledge_sources_collection.update_one({"_id": oid}, {"$set": updated_ks.dict(exclude={"id"})})
@@ -43,7 +43,7 @@ async def update_knowledge_source(ks_id: str, updated_ks: KnowledgeSource):
     return updated_ks
 
 
-@router.delete("/knowledgeSources/{ks_id}")
+@router.delete("/knowledge_sources/{ks_id}")
 async def delete_knowledge_source(ks_id: str):
     oid = ObjectId(ks_id)
     result = knowledge_sources_collection.delete_one({"_id": oid})
