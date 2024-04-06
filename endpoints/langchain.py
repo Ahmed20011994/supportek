@@ -23,8 +23,12 @@ async def handle_request(user_input: Input):
         # If the knowledge_source_id is invalid, proceed without tools
         pass
 
-    # Prepare the input message
+    # Prepare the input message and chat history
     input_message = HumanMessage(content=user_input.input)
+    chat_history = user_input.chat_history
+
+    # Combine the input message with the chat history for the context
+    context = chat_history + [input_message]
 
     # Check if there are any tools to use with the agent
     if tools:
@@ -32,12 +36,13 @@ async def handle_request(user_input: Input):
         from langchain.agents import AgentExecutor, create_openai_functions_agent
         agent = create_openai_functions_agent(llm, tools, prompt)
         agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        agent_input = {"input": [input_message], "context": user_input.chat_history}
+        agent_input = {"input": [input_message], "context": context}
         response = await agent_executor.ainvoke(agent_input)
         output = response.get("output")
     else:
         # Directly use the LLM without any tools
-        lm_output = await llm.ainvoke([input_message])
+        lm_output = await llm.ainvoke(context)  # Pass the context including chat history
         output = format_lm_output(lm_output).get("output")
 
     return {"output": output}
+
