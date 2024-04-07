@@ -5,4 +5,3 @@ client = MongoClient("mongodb+srv://supportek:loRyzvrMM0ScEt4Z@cluster0.08cunpc.
                      "=admin&authMechanism=SCRAM-SHA-1")
 db = client["supportekdb"]  # Replace "your_database_name" with your database name
 knowledge_sources_collection = db["knowledge_sources"]
-vectors_collection = db["vectors"]
