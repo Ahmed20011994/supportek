@@ -2,8 +2,11 @@ from typing import List
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
+from langchain_openai import OpenAIEmbeddings
 
+from core_logic import load_documents
 from database import knowledge_sources_collection
+from database import vectors_collection
 from models import KnowledgeSource
 
 router = APIRouter()
@@ -14,8 +17,21 @@ async def create_knowledge_source(knowledge_source: KnowledgeSource):
     existing_knowledge_source = knowledge_sources_collection.find_one({"url": knowledge_source.url})
     if existing_knowledge_source:
         raise HTTPException(status_code=400, detail="Knowledge source with the same URL already exists")
+
     result = knowledge_sources_collection.insert_one(knowledge_source.dict(by_alias=True, exclude={"id"}))
     created_knowledge_source = knowledge_sources_collection.find_one({"_id": result.inserted_id})
+
+    # Load documents from the provided URL
+    documents = load_documents(knowledge_source.url)
+
+    # Generate embeddings for the documents
+    embeddings_model = OpenAIEmbeddings()
+    vectors = embeddings_model.embed_documents(documents)
+
+    for vector in vectors:
+        vector_dict = {"knowledge_source_id": result.inserted_id, "vector": vector}
+        vectors_collection.insert_one(vector_dict)
+
     return KnowledgeSource(**created_knowledge_source)
 
 
