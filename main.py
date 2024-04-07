@@ -8,7 +8,7 @@ app.include_router(langchain.router, prefix="/llm", tags=["LangChain"])
 app.include_router(knowledgesources.router, prefix="/llm", tags=["Knowledge Sources"])
 
 
-@app.get("/health")
+@app.get("/llm/health")
 def health_check():
     return {"status": "ok"}
 
