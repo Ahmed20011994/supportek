@@ -1,6 +1,9 @@
+import re
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter
+from langchain.agents import create_openai_functions_agent, AgentExecutor
 
 from config import llm, prompt
 from core_logic import format_lm_output, create_tools
@@ -33,12 +36,16 @@ async def handle_request(user_input: Input):
     # Check if there are any tools to use with the agent
     if tools:
         # Use the agent with the retrieval tool
-        from langchain.agents import AgentExecutor, create_openai_functions_agent
         agent = create_openai_functions_agent(llm, tools, prompt)
         agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        agent_input = {"input": [input_message], "context": context}
+        agent_input = {"input": context, "context": context}
         response = await agent_executor.ainvoke(agent_input)
-        output = response.get("output")
+        match = re.search(r'(AssistantMessage|AIMessage)\(content=\'(.*)\'\)', response.get("output"))
+        if match:
+            content = match.group(2)
+        else:
+            content = response.get("output")
+        output = content
     else:
         # Directly use the LLM without any tools
         lm_output = await llm.ainvoke(context)  # Pass the context including chat history
