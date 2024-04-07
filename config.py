@@ -4,6 +4,7 @@ import os
 
 # Set the OpenAI API key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# os.environ["OPENAI_API_KEY"] = ""
 
 # Create an instance of ChatOpenAI
 llm = ChatOpenAI(model="gpt-4", temperature=0)
