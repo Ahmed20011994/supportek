@@ -11,9 +11,9 @@ router = APIRouter()
 
 @router.post("/knowledge_sources", response_model=KnowledgeSource)
 async def create_knowledge_source(knowledge_source: KnowledgeSource):
-    existing_knowledge_source = knowledge_sources_collection.find_one({"url": knowledge_source.url})
-    if existing_knowledge_source:
-        raise HTTPException(status_code=400, detail="Knowledge source with the same URL already exists")
+    # existing_knowledge_source = knowledge_sources_collection.find_one({"url": knowledge_source.url})
+    # if existing_knowledge_source:
+    #     raise HTTPException(status_code=400, detail="Knowledge source with the same URL already exists")
 
     result = knowledge_sources_collection.insert_one(knowledge_source.dict(by_alias=True, exclude={"id"}))
     created_knowledge_source = knowledge_sources_collection.find_one({"_id": result.inserted_id})
