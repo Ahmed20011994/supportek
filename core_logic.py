@@ -1,5 +1,4 @@
 import os
-
 from langchain.tools.retriever import create_retriever_tool
 from openai import OpenAI
 from pinecone import Pinecone
@@ -29,7 +28,7 @@ class PineconeRetriever:
 
     async def aget_relevant_documents(self, query, top_k=10, **kwargs):
         query_embedding = get_openai_embeddings(query)
-        results = self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
+        results = await self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
 
         # Process results and handle NoneType for metadata
         documents = []
@@ -43,6 +42,9 @@ class PineconeRetriever:
             documents.append(doc)
 
         return documents
+
+    async def ainvoke(self, query, **kwargs):
+        return await self.aget_relevant_documents(query, **kwargs)
 
 
 def create_tools(source):
