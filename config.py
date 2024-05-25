@@ -6,7 +6,7 @@ import os
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Set the Pinecone API key
-OPENAI_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 
 # Create an instance of ChatOpenAI
 llm = ChatOpenAI(model="gpt-4", temperature=0)
