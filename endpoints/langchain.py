@@ -21,7 +21,7 @@ async def handle_request(user_input: Input):
     try:
         source = knowledge_sources_collection.find_one({"_id": ObjectId(knowledge_source_id)})
         if source:
-            tools = create_tools(source['url'])
+            tools = create_tools(source)
     except InvalidId:
         # If the knowledge_source_id is invalid, proceed without tools
         pass

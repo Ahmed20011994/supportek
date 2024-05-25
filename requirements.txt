@@ -12,3 +12,5 @@ beautifulsoup4~=4.12.3
 pydantic~=1.10.13
 MyApplication~=0.1.0
 pymongo~=4.6.3
+pinecone~=4.0.0
+openai~=1.13.3
