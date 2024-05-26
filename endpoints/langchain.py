@@ -10,7 +10,7 @@ from core_logic import format_lm_output, create_tools
 from database import knowledge_sources_collection
 from models import HumanMessage, Input, Output
 from langdetect import detect
-from googletrans import Translator
+from custom_googletrans.client import Translator
 
 router = APIRouter()
 
@@ -59,7 +59,7 @@ async def handle_request(user_input: Input):
         output = format_lm_output(lm_output).get("output")
 
     if detected_language != 'en':
-        user_input.input = translate_to_detected_language(user_input.input, detected_language)
+        output = translate_to_detected_language(output, detected_language)
 
     return {"output": output}
 
