@@ -14,7 +14,7 @@ from httpx import Timeout
 
 from googletrans import urls, utils
 from googletrans.gtoken import TokenAcquirer
-from constants import (
+from custom_googletrans.constants import (
     DEFAULT_CLIENT_SERVICE_URLS,
     DEFAULT_USER_AGENT, LANGCODES, LANGUAGES, SPECIAL_CASES,
     DEFAULT_RAISE_EXCEPTION, DUMMY_DATA
