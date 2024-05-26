@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 from typing import List
 
@@ -11,6 +13,7 @@ from pinecone import Pinecone, ServerlessSpec
 
 from database import knowledge_sources_collection
 from models import KnowledgeSource
+import zlib
 
 router = APIRouter()
 
@@ -30,7 +33,7 @@ async def create_knowledge_source(knowledge_source: KnowledgeSource):
     soup = BeautifulSoup(response.content, "html.parser")
 
     # Extract all text from the page
-    text = soup.get_text(separator="\n")
+    text = soup.get_text(separator="")
 
     # Generate embeddings
     embeddings = get_openai_embeddings(text)
@@ -58,9 +61,13 @@ async def create_knowledge_source(knowledge_source: KnowledgeSource):
     # Connect to the index
     index = pc.Index(str(index_name))
 
+    cleaned_text = clean_up_text(text)
+
+    compressed_text = compress_text(cleaned_text)
+
     # Upsert vectors into the index
     index.upsert(vectors=[
-        (str(result.inserted_id), embeddings, {"text": text})
+        (str(result.inserted_id), embeddings, {"text": compressed_text})
     ])
 
     return KnowledgeSource(**created_knowledge_source)
@@ -132,3 +139,19 @@ def chunk_text(text, max_length):
         chunks.append(" ".join(current_chunk))
 
     return chunks
+
+
+def compress_text(text):
+    # Convert text to JSON and encode to bytes
+    bytes_data = bytes(json.dumps(text), 'utf-8')
+    # Compress the byte data
+    compressed_data = zlib.compress(bytes_data)
+    # Encode the compressed data with Base64 to ensure it's text-safe
+    base64_encoded_data = base64.b64encode(compressed_data)
+    return base64_encoded_data.decode('utf-8')
+
+
+def clean_up_text(text):
+    # Remove extra whitespace, line breaks
+    text = ' '.join(text.split())
+    return text

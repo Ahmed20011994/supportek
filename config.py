@@ -12,7 +12,7 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Create an instance of ChatOpenAI
-llm = ChatOpenAI(model="gpt-4", temperature=0)
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # Prompt for the OpenAI Functions agent
 prompt = hub.pull("hwchase17/openai-functions-agent")

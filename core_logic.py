@@ -1,4 +1,8 @@
+import base64
+import json
 import os
+import zlib
+
 from langchain.tools.retriever import create_retriever_tool
 from openai import OpenAI
 from pinecone import Pinecone
@@ -26,7 +30,7 @@ class PineconeRetriever:
     def __init__(self, index):
         self.index = index
 
-    async def aget_relevant_documents(self, query, top_k=10, **kwargs):
+    async def aget_relevant_documents(self, query, top_k=1, **kwargs):
         query_embedding = get_openai_embeddings(query)
         results = self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
 
@@ -36,8 +40,9 @@ class PineconeRetriever:
             # Fetch the metadata
             metadata = match['metadata'] if 'metadata' in match else {}
             doc = Document(
-                page_content=metadata.get("text", ""),  # Adjust this based on your data structure
-                metadata=metadata
+                page_content=decompress_text(metadata.get("text", "")),  # Adjust this based on your
+                # data structure
+                metadata={}
             )
             documents.append(doc)
 
@@ -68,3 +73,12 @@ def create_tools(source):
     )
 
     return [retrieval_tool]
+
+
+def decompress_text(compressed_text):
+    # Decode the Base64 string to get back the compressed binary data
+    compressed_data = base64.b64decode(compressed_text)
+    # Decompress the data
+    bytes_data = zlib.decompress(compressed_data)
+    # Decode the bytes to string
+    return json.loads(bytes_data.decode('utf-8'))
