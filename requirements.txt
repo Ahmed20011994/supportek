@@ -15,5 +15,4 @@ pymongo~=4.6.3
 pinecone~=4.0.0
 openai~=1.13.3
 langdetect~=1.0.9
-googletrans
 httpx[http2]

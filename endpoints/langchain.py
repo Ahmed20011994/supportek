@@ -1,16 +1,17 @@
+import os
 import re
 
+import requests
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter
 from langchain.agents import create_openai_functions_agent, AgentExecutor
+from langdetect import detect
 
 from config import llm, prompt
 from core_logic import format_lm_output, create_tools
 from database import knowledge_sources_collection
 from models import HumanMessage, Input, Output
-from langdetect import detect
-from custom_googletrans.client import Translator
 
 router = APIRouter()
 
@@ -31,7 +32,7 @@ async def handle_request(user_input: Input):
     detected_language = detect_language(user_input.input)
 
     if detected_language != 'en':
-        user_input.input = translate_from_detected_language(user_input.input, detected_language)
+        user_input.input = google_translate(user_input.input, 'en')
 
     # Prepare the input message and chat history
     input_message = HumanMessage(content=user_input.input)
@@ -59,7 +60,7 @@ async def handle_request(user_input: Input):
         output = format_lm_output(lm_output).get("output")
 
     if detected_language != 'en':
-        output = translate_to_detected_language(output, detected_language)
+        output = google_translate(output, detected_language)
 
     return {"output": output}
 
@@ -70,25 +71,29 @@ def detect_language(text):
     return detected_language
 
 
-def translate_from_detected_language(text, detected_language):
-    try:
-        # If the detected language is not English, translate the text to English
-        translator = Translator()
-        translated = translator.translate(text, src=detected_language, dest='en')
-        return translated.text
+def google_translate(text, target_language):
+    url = "https://translation.googleapis.com/language/translate/v2"
+    data = {
+        'q': text,
+        'target': target_language,
+        'format': 'text'
+    }
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept-Charset': 'UTF-8',
+        'X-Goog-Api-Key': os.environ.get("GOOGLE_API_KEY")
+    }
 
-    except Exception as e:
-        # Handle any errors that occur during detection or translation
-        return str(e)
+    # Making the POST request
+    response = requests.post(url, params=data, headers=headers)
 
+    # Checking if the request was successful
+    if response.status_code == 200:
+        # Parsing the response
+        result = response.json()
+        translations = result.get('data', {}).get('translations', [])
+        if translations:
+            return translations[0].get('translatedText')
+    else:
+        return f"Failed to translate text: {response.text}"
 
-def translate_to_detected_language(text, detected_language):
-    try:
-        # If the detected language is not English, translate the text to English
-        translator = Translator()
-        translated = translator.translate(text, src='en', dest=detected_language)
-        return translated.text
-
-    except Exception as e:
-        # Handle any errors that occur during detection or translation
-        return str(e)
