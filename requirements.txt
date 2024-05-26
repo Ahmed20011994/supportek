@@ -1,10 +1,10 @@
 fastapi~=0.110.0
 uvicorn~=0.28.0
-langchain~=0.1.12
+langchain
 langchain_openai
 bs4~=0.0.2
 faiss-cpu
-langserve~=0.0.47
+langserve
 langchainhub
 sse_starlette
 requests~=2.31.0
@@ -13,7 +13,7 @@ pydantic~=1.10.13
 MyApplication~=0.1.0
 pymongo~=4.6.3
 pinecone~=4.0.0
-openai~=1.13.3
-langdetect~=1.0.9
+openai
+langdetect
 googletrans
 httpx
