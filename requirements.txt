@@ -17,4 +17,4 @@ openai~=1.13.3
 langdetect~=1.0.9
 httpx~=0.23.0
 httpcore~=0.15.0
-googletrans~=4.0.0-rc1
+googletrans==4.0.0-rc1
