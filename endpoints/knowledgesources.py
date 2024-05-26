@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+import numpy as np
 import requests
 from bs4 import BeautifulSoup
 from bson import ObjectId
@@ -99,7 +100,35 @@ async def delete_knowledge_source(ks_id: str):
 
 
 # Function to get OpenAI embeddings
-def get_openai_embeddings(text):
+def get_openai_embeddings(text, model="text-embedding-ada-002", max_tokens=8192):
     client = OpenAI()
-    response = client.embeddings.create(input=text, model="text-embedding-ada-002")
-    return response.data[0].embedding
+    chunks = chunk_text(text, max_tokens)
+    embeddings = []
+
+    for chunk in chunks:
+        response = client.embeddings.create(input=chunk, model=model)
+        embeddings.append(response.data[0].embedding)
+
+    # Averaging the embeddings across chunks
+    return np.mean(embeddings, axis=0)
+
+
+def chunk_text(text, max_length):
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) > max_length:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [word]
+            current_length = len(word)
+        else:
+            current_chunk.append(word)
+            current_length += len(word)
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks
